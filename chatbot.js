@@ -10,18 +10,6 @@ const modelStatus = document.getElementById('model-status');
 let fallbackJokes = [];
 let fallbackJokesLoaded = false;
 
-// Notify when Transformers.js is loaded (for loading indicator)
-if (window.transformers) {
-  window.dispatchEvent(new Event('transformersLoaded'));
-} else {
-  const checkTransformers = setInterval(() => {
-    if (window.transformers) {
-      window.dispatchEvent(new Event('transformersLoaded'));
-      clearInterval(checkTransformers);
-    }
-  }, 50);
-}
-
 async function loadFallbackJokes() {
   if (!fallbackJokesLoaded) {
     const module = await import('./fallbackJokes.js');
