@@ -7,6 +7,13 @@ let modelLoaded = false;
 let llm = null;
 const modelStatus = document.getElementById('model-status');
 
+let fallbackJokes = [];
+
+(async () => {
+  const module = await import('./fallbackJokes.js');
+  fallbackJokes = module.fallbackJokes;
+})();
+
 async function loadLLM() {
   modelStatus.textContent = 'Loading model...';
   try {
@@ -31,26 +38,6 @@ window.addEventListener('DOMContentLoaded', () => {
   appendMessage('bot', "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic, and I'll do my best to make you laugh!");
 });
 
-const jokes = {
-  general: [
-    "Why don't scientists trust atoms? Because they make up everything!",
-    "Why did the scarecrow win an award? Because he was outstanding in his field!",
-    "Why did the math book look sad? Because it had too many problems!",
-    "Why did the bicycle fall over? Because it was two-tired!",
-    "Why can't you give Elsa a balloon? Because she will let it go!"
-  ],
-  animal: [
-    "Why do cows have hooves instead of feet? Because they lactose!",
-    "What do you call a fish wearing a bowtie? Sofishticated.",
-    "Why did the chicken join a band? Because it had the drumsticks!"
-  ],
-  tech: [
-    "Why do programmers prefer dark mode? Because light attracts bugs!",
-    "Why was the computer cold? It left its Windows open!",
-    "Why did the smartphone need glasses? Because it lost its contacts!"
-  ]
-};
-
 function appendMessage(sender, text) {
   const msg = document.createElement('div');
   msg.className = sender;
@@ -66,14 +53,6 @@ function showTypingIndicator() {
 function hideTypingIndicator() {
   document.getElementById('typing-indicator').style.display = 'none';
 }
-
-const fallbackJokes = [
-  "Why don't scientists trust atoms? Because they make up everything!",
-  "Why did the scarecrow win an award? Because he was outstanding in his field!",
-  "Why did the math book look sad? Because it had too many problems!",
-  "Why did the bicycle fall over? Because it was two-tired!",
-  "Why can't you give Elsa a balloon? Because she will let it go!"
-];
 
 async function getLLMJoke(userText) {
   if (!llm) return null;
