@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.13.0/dist/transformers.min.js"></script>
 </head>
 <body>
+  <div id="llm-js-loading" style="position:fixed;top:0;left:0;width:100vw;height:40px;background:#0078d7;color:#fff;display:flex;align-items:center;justify-content:center;z-index:1000;font-weight:500;letter-spacing:0.5px;">Loading AI engine...</div>
   <div class="chat-container">
     <div class="chat-header">
       <span class="chat-title">JokeBot 🤖</span>
@@ -25,6 +26,16 @@
     </form>
     <div id="loading" class="loading" style="display:none;">Loading JokeBot...</div>
   </div>
+  <script>
+    // Hide the LLM JS loading indicator when Transformers.js is loaded
+    if (window.transformers) {
+      document.getElementById('llm-js-loading').style.display = 'none';
+    } else {
+      window.addEventListener('transformersLoaded', function() {
+        document.getElementById('llm-js-loading').style.display = 'none';
+      });
+    }
+  </script>
   <script src="chatbot.js"></script>
 </body>
 </html>

@@ -8,16 +8,31 @@ let llm = null;
 const modelStatus = document.getElementById('model-status');
 
 let fallbackJokes = [];
+let fallbackJokesLoaded = false;
 
-(async () => {
-  const module = await import('./fallbackJokes.js');
-  fallbackJokes = module.fallbackJokes;
-})();
+// Notify when Transformers.js is loaded (for loading indicator)
+if (window.transformers) {
+  window.dispatchEvent(new Event('transformersLoaded'));
+} else {
+  const checkTransformers = setInterval(() => {
+    if (window.transformers) {
+      window.dispatchEvent(new Event('transformersLoaded'));
+      clearInterval(checkTransformers);
+    }
+  }, 50);
+}
+
+async function loadFallbackJokes() {
+  if (!fallbackJokesLoaded) {
+    const module = await import('./fallbackJokes.js');
+    fallbackJokes = module.fallbackJokes;
+    fallbackJokesLoaded = true;
+  }
+}
 
 async function loadLLM() {
   modelStatus.textContent = 'Loading model...';
   try {
-    // Ensure the backend is set to 'wasm' for browser compatibility
     if (window.transformers && window.transformers.env) {
       window.transformers.env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.13.0/dist/wasm/';
       await window.transformers.setBackend('wasm');
@@ -32,9 +47,10 @@ async function loadLLM() {
   }
 }
 
-// Call loadLLM on page load
-window.addEventListener('DOMContentLoaded', () => {
-  loadLLM();
+// Call loadLLM and loadFallbackJokes on page load
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadFallbackJokes();
+  await loadLLM();
   appendMessage('bot', "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic, and I'll do my best to make you laugh!");
 });
 
@@ -56,13 +72,11 @@ function hideTypingIndicator() {
 
 async function getLLMJoke(userText) {
   if (!llm) return null;
-  // Enhanced prompt for intent-based joke generation
   const prompt = `You are a helpful, family-friendly chatbot that tells jokes. If the user asks for a joke about a specific topic, generate a short joke about that topic. If the topic is unclear, tell a general joke.\nUser: ${userText}\nJokeBot:`;
   try {
     const output = await llm(prompt, { max_new_tokens: 48 });
     if (output && output.length && output[0].generated_text) {
       let joke = output[0].generated_text.replace(prompt, '').trim();
-      // Remove any trailing incomplete sentences
       joke = joke.split('\n')[0].trim();
       if (!joke) joke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
       return joke;
@@ -76,6 +90,7 @@ async function getLLMJoke(userText) {
 
 chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  await loadFallbackJokes(); // Ensure fallbackJokes are loaded before use
   const text = userInput.value.trim();
   if (!text) return;
   appendMessage('user', text);
@@ -89,7 +104,6 @@ chatForm.addEventListener('submit', async (e) => {
   if (modelLoaded && llm) {
     response = await getLLMJoke(text);
   } else {
-    // Fallback to static joke
     response = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
   }
 
