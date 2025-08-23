@@ -184,8 +184,9 @@ function hideLoadingIndicator() {
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM loaded, starting initialization...');
   
-  userInput.disabled = true;
-  chatForm.querySelector('button').disabled = true;
+  // Enable UI immediately - don't wait for model loading
+  userInput.disabled = false;
+  chatForm.querySelector('button').disabled = false;
   
   updateLoadingStatus('Loading NLP libraries...');
   
@@ -197,53 +198,123 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Initialize NLP
   if (librariesLoaded && initializeNLP()) {
     console.log('NLP libraries loaded successfully');
-    updateLoadingStatus('Loading AI model...');
+    updateLoadingStatus('NLP ready - AI model loading in background...');
     if (modelStatus) {
-      modelStatus.textContent = 'NLP + AI';
+      modelStatus.textContent = 'NLP + Loading AI...';
     }
   } else {
-    console.warn('Failed to initialize NLP, using fallback mode');
-    updateLoadingStatus('Loading AI model (fallback mode)...');
+    console.log('Failed to initialize NLP, using fallback mode');
+    updateLoadingStatus('Fallback mode - AI model loading in background...');
     if (modelStatus) {
-      modelStatus.textContent = 'Fallback + AI';
+      modelStatus.textContent = 'Fallback + Loading AI...';
     }
   }
   
-  // Set initial model status
-  if (modelStatus) {
-    modelStatus.textContent = 'Initializing...';
+  // Hide loading indicator and show chat immediately
+  hideLoadingIndicator();
+  
+  // Show welcome message immediately
+  let welcomeMessage = "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic!";
+  if (!nlp) {
+    welcomeMessage += " (AI model loading in background - will be available soon!)";
+  } else {
+    welcomeMessage += " (AI model loading in background - will be available soon!)";
   }
   
-  console.log('Loading WebLLM...');
-  await loadWebLLM();
+  appendMessage('bot', welcomeMessage);
+  
+  // Load WebLLM in background (non-blocking)
+  console.log('Starting WebLLM background loading...');
+  
+  // Show background loading message
+  appendMessage('bot', "⏳ Loading AI model in background... This may take a few minutes.");
+  
+  loadWebLLMInBackground();
+});
+
+// Load WebLLM in background without blocking UI
+async function loadWebLLMInBackground() {
+  try {
+    console.log('Background: Starting WebLLM initialization...');
     
-    // Update final status
+    // Update status to show background loading
     if (modelStatus) {
-      if (webllmLoaded) {
-        const currentModel = modelSelection ? modelSelection.value : 'Unknown';
-        modelStatus.textContent = nlp ? `NLP + ${currentModel}` : `Fallback + ${currentModel}`;
-      } else {
-        modelStatus.textContent = nlp ? 'NLP Only' : 'Fallback Only';
+      const currentText = modelStatus.textContent;
+      if (currentText.includes('Loading AI...')) {
+        modelStatus.textContent = currentText.replace('Loading AI...', 'AI Loading...');
       }
     }
     
-    // Hide loading indicator and show chat
-    hideLoadingIndicator();
+    // Create a progress message that we'll update
+    const progressMsg = appendMessage('bot', "🔄 Initializing AI model...");
     
-    // Show appropriate welcome message based on capabilities
-    let welcomeMessage = "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic!";
-    if (!nlp && !webllmLoaded) {
-      welcomeMessage += " (Running in fallback mode - basic joke detection)";
-    } else if (!nlp) {
-      welcomeMessage += " (Enhanced with AI but basic joke detection)";
-    } else if (!webllmLoaded) {
-      welcomeMessage += " (Smart joke detection but no AI generation)";
+    // Set up progress tracking
+    let lastProgress = 0;
+    const progressInterval = setInterval(() => {
+      if (progressMsg && lastProgress < 90) {
+        lastProgress += Math.random() * 10;
+        progressMsg.textContent = `🔄 Initializing AI model... ${Math.round(lastProgress)}%`;
+      }
+    }, 2000);
+    
+    await loadWebLLM();
+    
+    // Clear progress interval
+    clearInterval(progressInterval);
+    
+    // Model loaded successfully - update UI
+    if (webllmLoaded) {
+      console.log('Background: WebLLM loaded successfully');
+      
+      // Update status
+      if (modelStatus) {
+        const currentModel = document.getElementById('model-selection')?.value || 'Unknown';
+        modelStatus.textContent = nlp ? `NLP + ${currentModel}` : `Fallback + ${currentModel}`;
+      }
+      
+      // Show model selection dropdown
+      const modelSelection = document.getElementById('model-selection');
+      if (modelSelection) {
+        modelSelection.style.display = 'inline-block';
+      }
+      
+      // Remove the loading message and notify user that AI is now available
+      if (progressMsg && progressMsg.parentNode) {
+        progressMsg.parentNode.removeChild(progressMsg);
+      }
+      appendMessage('bot', "🎉 AI model is now ready! You can now get AI-generated jokes!");
+      
+      // Update loading status
+      updateLoadingStatus('AI model ready!');
+      
+    } else {
+      console.log('Background: WebLLM failed to load');
+      if (modelStatus) {
+        modelStatus.textContent = nlp ? 'NLP Only' : 'Fallback Only';
+      }
+      updateLoadingStatus('AI model failed to load - using fallback mode');
+      
+      // Update the loading message to show failure
+      if (progressMsg) {
+        progressMsg.textContent = "❌ AI model failed to load. Using fallback mode.";
+      }
     }
     
-    appendMessage('bot', welcomeMessage);
-    userInput.disabled = false;
-    chatForm.querySelector('button').disabled = false;
-});
+  } catch (error) {
+    console.error('Background: WebLLM loading failed:', error);
+    if (modelStatus) {
+      modelStatus.textContent = nlp ? 'NLP Only' : 'Fallback Only';
+    }
+    updateLoadingStatus('AI model failed to load - using fallback mode');
+    
+    // Update the loading message to show failure
+    if (progressMsg) {
+      progressMsg.textContent = "❌ AI model failed to load. Using fallback mode.";
+    }
+    
+    appendMessage('bot', "⚠️ AI model failed to load. You can still use fallback jokes!");
+  }
+}
 
 function appendMessage(sender, text) {
   const msg = document.createElement('div');
@@ -262,7 +333,13 @@ function hideTypingIndicator() {
 }
 
 async function getWebLLMJoke(userText) {
-  if (!webllmLoaded || !webllmEngine) return null;
+  if (!webllmLoaded || !webllmEngine) {
+    // Check if model is still loading
+    if (modelStatus && modelStatus.textContent.includes('Loading')) {
+      return "🤔 AI model is still loading in the background. Please wait a moment and try again, or I can tell you a fallback joke instead!";
+    }
+    return null;
+  }
   
   const messages = [
     {
@@ -349,10 +426,28 @@ if (modelSelection) {
   });
 }
 
+// Add status check command
 chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = userInput.value.trim();
   if (!text) return;
+  
+      // Check for status command
+    if (text.toLowerCase().includes('status') || text.toLowerCase().includes('loading')) {
+      let statusMessage = "📊 Current Status:\n";
+      statusMessage += `• NLP: ${nlp ? '✅ Ready' : '❌ Not available'}\n`;
+      statusMessage += `• AI Model: ${webllmLoaded ? '✅ Ready' : '⏳ Loading...'}\n`;
+      
+      if (modelStatus) {
+        statusMessage += `• Status: ${modelStatus.textContent}`;
+      }
+      
+      appendMessage('user', text);
+      userInput.value = '';
+      appendMessage('bot', statusMessage);
+      return;
+    }
+  
   appendMessage('user', text);
   userInput.value = '';
 
