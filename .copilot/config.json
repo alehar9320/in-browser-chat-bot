@@ -1,0 +1,13 @@
+{
+  "projectName": "In-Browser Chat Bot",
+  "description": "A local in-client chat bot powered by a large language model, providing contextual answers based on user intent.",
+  "preferredLanguages": ["javascript", "typescript", "html", "css"],
+  "frameworks": ["none"],
+  "guidelines": [
+    "Prioritize privacy and local execution.",
+    "Focus on intent-based natural language processing.",
+    "Ensure code is modular and well-documented.",
+    "Use modern, accessible web standards."
+  ],
+  "excludePaths": ["node_modules", "dist", "build"]
+}
