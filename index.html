@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>In-Browser Joke Chatbot</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,6 +13,12 @@
     <div class="chat-header">
       <span class="chat-title">JokeBot 🤖</span>
       <span class="status-indicator" aria-label="Bot online" title="Bot online"></span>
+      <div id="model-status" class="model-status"></div>
+      <select id="model-selection" class="model-selection" style="display: none;">
+        <option value="Llama-3-8B-Instruct-q4f32_1-MLC-1k">Llama 3 (8B)</option>
+        <option value="Phi-3-mini-4k-instruct-q4f16_1">Phi-3 Mini (4K)</option>
+        <option value="Llama-3.1-8B-Instruct-q4f32_1-MLC-1k">Llama 3.1 (8B)</option>
+      </select>
     </div>
     <div id="chat-window" class="chat-window" aria-live="polite" aria-label="Chat messages"></div>
     <div id="typing-indicator" class="typing-indicator" style="display:none;" aria-live="polite" aria-label="Bot is typing">
@@ -24,9 +31,68 @@
     </form>
     <div id="loading" class="loading" style="display:none;">Loading JokeBot...</div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/wink-nlp@1.10.0/dist/wink-nlp.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/wink-eng-lite-web-model@1.0.0/dist/wink-eng-lite-web-model.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.8.7/dist/webllm.min.js"></script>
+  <!-- Load libraries with error handling -->
+  <script>
+    // Global error tracking
+    window.scriptErrors = [];
+    
+    function handleScriptError(script, error) {
+      console.error('Script failed to load:', script.src, error);
+      window.scriptErrors.push({ script: script.src, error: error.message });
+    }
+    
+    // Load scripts with error handling
+    function loadScript(src, onLoad, onError) {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = onLoad;
+      script.onerror = (e) => onError(e);
+      document.head.appendChild(script);
+    }
+    
+    // Load winkNLP with fallback
+    loadScript('https://cdn.jsdelivr.net/npm/wink-nlp@1.10.0/dist/wink-nlp.min.js', 
+      () => console.log('winkNLP loaded successfully'),
+      (e) => {
+        console.warn('Primary winkNLP CDN failed, trying alternative...');
+        loadScript('https://unpkg.com/wink-nlp@1.10.0/dist/wink-nlp.min.js',
+          () => console.log('winkNLP loaded from alternative CDN'),
+          (e2) => handleScriptError({ src: 'winkNLP (all sources)' }, e2)
+        );
+      }
+    );
+    
+    // Load winkNLP model with fallback
+    loadScript('https://cdn.jsdelivr.net/npm/wink-eng-lite-web-model@1.0.0/dist/wink-eng-lite-web-model.min.js',
+      () => console.log('winkNLP model loaded successfully'),
+      (e) => {
+        console.warn('Primary winkNLP model CDN failed, trying alternative...');
+        loadScript('https://unpkg.com/wink-eng-lite-web-model@1.0.0/dist/wink-eng-lite-web-model.min.js',
+          () => console.log('winkNLP model loaded from alternative CDN'),
+          (e2) => handleScriptError({ src: 'winkNLP model (all sources)' }, e2)
+        );
+      }
+    );
+    
+    // Track script loading progress
+    window.scriptsLoaded = {
+      winkNLP: false,
+      model: false
+    };
+    
+    // Update loading status
+    function updateScriptStatus(scriptName, loaded) {
+      window.scriptsLoaded[scriptName] = true;
+      console.log(`Script status update: ${scriptName} = ${loaded}`);
+      console.log('Overall script status:', window.scriptsLoaded);
+    }
+    
+    // Set up status tracking
+    setTimeout(() => {
+      if (window.winkNLP) updateScriptStatus('winkNLP', true);
+      if (window.model) updateScriptStatus('model', true);
+    }, 1000);
+  </script>
   <script type="module" src="chatbot.js"></script>
 </body>
 </html>

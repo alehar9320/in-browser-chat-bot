@@ -100,6 +100,31 @@ button[type="submit"] {
   100% { box-shadow: 0 0 0 0 #4ade80; }
 }
 
+.model-status {
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: auto;
+  font-weight: 400;
+  text-align: right;
+  min-width: 120px;
+}
+
+.model-selection {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.model-selection option {
+  background: #0078d7;
+  color: white;
+}
+
 /* Chat bubbles */
 .user {
   text-align: right;
