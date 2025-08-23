@@ -58,6 +58,25 @@ app.post('/analyze', (req, res) => {
     }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        nlp: {
+            engine: 'winkNLP',
+            model: 'wink-eng-lite-web-model',
+            status: 'ready'
+        },
+        server: {
+            uptime: process.uptime(),
+            memory: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+            environment: process.env.NODE_ENV || 'development'
+        }
+    });
+});
+
 // Start the server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
