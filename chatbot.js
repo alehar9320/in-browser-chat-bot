@@ -1,7 +1,6 @@
 const chatWindow = document.getElementById('chat-window');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
-const loading = document.getElementById('loading');
 
 let modelLoaded = false;
 let llm = null;
@@ -19,7 +18,6 @@ async function loadFallbackJokes() {
 }
 
 async function loadLLM() {
-  modelStatus.textContent = 'Loading model...';
   try {
     if (window.transformers && window.transformers.env) {
       window.transformers.env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.13.0/dist/wasm/';
@@ -29,9 +27,9 @@ async function loadLLM() {
     modelLoaded = true;
     modelStatus.textContent = 'Model ready!';
   } catch (e) {
-    modelStatus.textContent = 'Model failed to load. Using fallback.';
     modelLoaded = false;
     console.error('LLM load error:', e);
+    // Do not update modelStatus to a failure message
   }
 }
 
