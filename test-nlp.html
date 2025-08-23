@@ -3,37 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>In-Browser Joke Chatbot</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="style.css">
+  <title>winkNLP Loading Test</title>
 </head>
 <body>
-  <div id="llm-js-loading" style="position:fixed;top:0;left:0;width:100vw;height:40px;background:#0078d7;color:#fff;display:flex;align-items:center;justify-content:center;z-index:1000;font-weight:500;letter-spacing:0.5px;">Loading AI engine...</div>
-  <div class="chat-container">
-    <div class="chat-header">
-      <span class="chat-title">JokeBot 🤖</span>
-      <span class="status-indicator" aria-label="Bot online" title="Bot online"></span>
-      <div id="model-status" class="model-status"></div>
-      <select id="model-selection" class="model-selection" style="display: none;">
-        <option value="Llama-3-8B-Instruct-q4f32_1-MLC-1k">Llama 3 (8B)</option>
-        <option value="Phi-3-mini-4k-instruct-q4f16_1">Phi-3 Mini (4K)</option>
-        <option value="Llama-3.1-8B-Instruct-q4f32_1-MLC-1k">Llama 3.1 (8B)</option>
-      </select>
-    </div>
-    <div id="chat-window" class="chat-window" aria-live="polite" aria-label="Chat messages">
-      <!-- Initial help message will be added by JavaScript -->
-    </div>
-    <div id="typing-indicator" class="typing-indicator" style="display:none;" aria-live="polite" aria-label="Bot is typing">
-      <span></span><span></span><span></span>
-      <span class="typing-text">JokeBot is typing...</span>
-    </div>
-    <form id="chat-form" autocomplete="off" aria-label="Send a message">
-      <input type="text" id="user-input" placeholder="Ask for a joke about..." required aria-label="Message input" />
-      <button type="submit" aria-label="Send message">Send</button>
-    </form>
-    <div id="loading" class="loading" style="display:none;">Loading JokeBot...</div>
-  </div>
-  <!-- Load libraries with proper CDN and hybrid architecture -->
+  <h1>winkNLP Loading Test</h1>
+  <div id="status">Loading...</div>
+  <div id="output"></div>
+  
   <script>
     // Global error tracking and script loading status
     window.scriptErrors = [];
@@ -45,6 +21,7 @@
     function handleScriptError(script, error) {
       console.error('Script failed to load:', script.src, error);
       window.scriptErrors.push({ script: script.src, error: error.message });
+      document.getElementById('status').textContent = 'Error loading scripts';
     }
     
     // Load scripts with error handling and proper global exposure
@@ -61,12 +38,14 @@
       () => {
         console.log('winkNLP core library loaded successfully');
         window.scriptsLoaded.winkNLP = true;
+        document.getElementById('status').textContent = 'winkNLP core loaded, loading model...';
         
         // Now load the English language model
         loadScript('https://cdn.jsdelivr.net/npm/wink-eng-lite-web-model@1.0.0/dist/wink-eng-lite-web-model.min.js',
           () => {
             console.log('winkNLP English model loaded successfully');
             window.scriptsLoaded.model = true;
+            document.getElementById('status').textContent = 'Model loaded, initializing...';
             
             // Initialize winkNLP with the model
             try {
@@ -76,10 +55,15 @@
                 window.its = window.nlpInstance.its;
                 window.as = window.nlpInstance.as;
                 console.log('winkNLP fully initialized with model');
+                document.getElementById('status').textContent = 'winkNLP fully operational!';
+                
+                // Test the NLP functionality
+                testNLP();
               }
             } catch (error) {
               console.error('Error initializing winkNLP with model:', error);
               window.scriptErrors.push({ script: 'winkNLP initialization', error: error.message });
+              document.getElementById('status').textContent = 'Initialization failed: ' + error.message;
             }
           },
           (e) => {
@@ -88,6 +72,7 @@
               () => {
                 console.log('winkNLP model loaded from alternative CDN');
                 window.scriptsLoaded.model = true;
+                document.getElementById('status').textContent = 'Model loaded (alternative), initializing...';
                 
                 // Initialize winkNLP with the model
                 try {
@@ -96,10 +81,15 @@
                     window.its = window.nlpInstance.its;
                     window.as = window.nlpInstance.as;
                     console.log('winkNLP fully initialized with model (alternative CDN)');
+                    document.getElementById('status').textContent = 'winkNLP fully operational (alternative)!';
+                    
+                    // Test the NLP functionality
+                    testNLP();
                   }
                 } catch (error) {
                   console.error('Error initializing winkNLP with model:', error);
                   window.scriptErrors.push({ script: 'winkNLP initialization (alternative)', error: error.message });
+                  document.getElementById('status').textContent = 'Initialization failed: ' + error.message;
                 }
               },
               (e2) => handleScriptError({ src: 'winkNLP model (all sources)' }, e2)
@@ -113,12 +103,14 @@
           () => {
             console.log('winkNLP loaded from alternative CDN');
             window.scriptsLoaded.winkNLP = true;
+            document.getElementById('status').textContent = 'winkNLP loaded (alternative), loading model...';
             
             // Load model from alternative CDN as well
             loadScript('https://unpkg.com/wink-eng-lite-web-model@1.0.0/dist/wink-eng-lite-web-model.min.js',
               () => {
                 console.log('winkNLP model loaded from alternative CDN');
                 window.scriptsLoaded.model = true;
+                document.getElementById('status').textContent = 'Model loaded (alternative), initializing...';
                 
                 // Initialize winkNLP with the model
                 try {
@@ -127,10 +119,15 @@
                     window.its = window.nlpInstance.its;
                     window.as = window.nlpInstance.as;
                     console.log('winkNLP fully initialized with model (alternative CDN)');
+                    document.getElementById('status').textContent = 'winkNLP fully operational (alternative)!';
+                    
+                    // Test the NLP functionality
+                    testNLP();
                   }
                 } catch (error) {
                   console.error('Error initializing winkNLP with model:', error);
                   window.scriptErrors.push({ script: 'winkNLP initialization (alternative)', error: error.message });
+                  document.getElementById('status').textContent = 'Initialization failed: ' + error.message;
                 }
               },
               (e2) => handleScriptError({ src: 'winkNLP model (alternative)' }, e2)
@@ -140,6 +137,29 @@
         );
       }
     );
+    
+    // Test NLP functionality
+    function testNLP() {
+      try {
+        const testText = 'Hello World! How are you today? Tell me a joke.';
+        const doc = window.nlpInstance.readDoc(testText);
+        
+        const output = document.getElementById('output');
+        output.innerHTML = `
+          <h3>NLP Test Results:</h3>
+          <p><strong>Input:</strong> ${testText}</p>
+          <p><strong>Sentences:</strong> ${doc.sentences().out().join(' | ')}</p>
+          <p><strong>Tokens:</strong> ${doc.tokens().out().join(', ')}</p>
+          <p><strong>Token Types:</strong> ${JSON.stringify(doc.tokens().out(window.its.type, window.as.freqTable))}</p>
+          <p><strong>Entities:</strong> ${JSON.stringify(doc.entities().out(window.its.detail))}</p>
+        `;
+        
+        console.log('NLP test completed successfully');
+      } catch (error) {
+        console.error('NLP test failed:', error);
+        document.getElementById('output').innerHTML = `<p style="color: red;">NLP test failed: ${error.message}</p>`;
+      }
+    }
     
     // Set up periodic status checking for debugging
     setInterval(() => {
@@ -156,6 +176,5 @@
       }
     }, 5000);
   </script>
-  <script type="module" src="chatbot.js"></script>
 </body>
 </html>

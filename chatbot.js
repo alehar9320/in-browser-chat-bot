@@ -1,7 +1,36 @@
+/**
+ * In-Browser Chat Bot with Hybrid Architecture
+ * 
+ * This implementation follows a hybrid architectural pattern for optimal user experience:
+ * 
+ * 1. LIGHTWEIGHT INTENT CLASSIFICATION (winkNLP):
+ *    - Uses winkNLP for instant, low-latency intent classification
+ *    - Processes user input immediately without blocking the UI
+ *    - Provides sophisticated NLP analysis including tokenization, sentence parsing, and entity recognition
+ *    - Falls back to enhanced keyword matching if NLP isn't available
+ * 
+ * 2. HEAVY JOKE GENERATION (WebLLM):
+ *    - Only activates the multi-gigabyte WebLLM engine after intent confirmation
+ *    - Loads in the background without blocking user interaction
+ *    - Generates creative, context-aware jokes using the selected language model
+ *    - Falls back to pre-defined jokes if AI generation fails
+ * 
+ * BENEFITS:
+ * - Responsive UI: Users can interact immediately while AI loads
+ * - Resource Efficiency: Heavy processing only when needed
+ * - Privacy First: All processing happens locally in the browser
+ * - Graceful Degradation: Multiple fallback layers ensure functionality
+ * 
+ * ARCHITECTURE FLOW:
+ * User Input → winkNLP Intent Classification → Intent Confirmed → WebLLM Joke Generation → Response
+ *                ↓ (if NLP fails)
+ *            Enhanced Keyword Fallback → Intent Confirmed → WebLLM/Fallback Joke → Response
+ */
+
 import { fallbackJokes } from './fallbackJokes.js';
 import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-// Global variables for NLP
+// Global variables for NLP - using the properly loaded libraries
 let nlp = null;
 let its = null;
 let as = null;
@@ -15,14 +44,15 @@ const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
 const modelStatus = document.getElementById('model-status');
 
-// Initialize winkNLP when libraries are ready
+// Initialize winkNLP when libraries are ready - using the hybrid architecture
 function initializeNLP() {
   try {
-    if (window.winkNLP && window.model) {
-      nlp = window.winkNLP(window.model);
-      its = nlp.its;
-      as = nlp.as;
-      console.log('winkNLP initialized successfully');
+    // Check for the properly initialized winkNLP instance
+    if (window.nlpInstance && window.its && window.as) {
+      nlp = window.nlpInstance;
+      its = window.its;
+      as = window.as;
+      console.log('winkNLP initialized successfully for hybrid architecture');
       return true;
     }
   } catch (error) {
@@ -31,32 +61,117 @@ function initializeNLP() {
   return false;
 }
 
-// Helper: Detect if user is asking for a joke
-function isJokeIntent(text) {
-  // Enhanced fallback that works without NLP
-  const lowerText = text.toLowerCase();
-  const jokeKeywords = [
-    'joke', 'funny', 'laugh', 'make me laugh', 'tell me something funny',
-    'humor', 'hilarious', 'amusing', 'entertaining', 'comedy'
-  ];
-  
-  // Check for joke-related patterns
-  const hasJokeKeyword = jokeKeywords.some(keyword => lowerText.includes(keyword));
-  const hasQuestionPattern = lowerText.includes('?') && (lowerText.includes('tell') || lowerText.includes('give'));
-  
+// Enhanced intent classification using winkNLP for the hybrid architecture
+function classifyUserIntent(text) {
   if (!nlp) {
-    // Enhanced fallback if NLP isn't ready
-    return hasJokeKeyword || hasQuestionPattern;
+    // Fallback to basic keyword matching if NLP isn't ready
+    return classifyIntentFallback(text);
   }
   
   try {
+    // Use winkNLP for sophisticated intent classification
     const doc = nlp.readDoc(text);
-    const tokens = doc.tokens().out(as.array);
-    return hasJokeKeyword || hasQuestionPattern;
-  } catch (e) {
-    console.warn('NLP processing failed, using enhanced fallback:', e);
-    return hasJokeKeyword || hasQuestionPattern;
+    
+    // Extract key information for intent classification
+    const tokens = doc.tokens().out();
+    const sentences = doc.sentences().out();
+    const entities = doc.entities().out(its.detail);
+    
+    // Enhanced intent classification using NLP features
+    const lowerText = text.toLowerCase();
+    
+    // Check for joke-related patterns with NLP assistance
+    const jokePatterns = [
+      'joke', 'funny', 'laugh', 'make me laugh', 'tell me something funny',
+      'humor', 'hilarious', 'amusing', 'entertaining', 'comedy', 'pun',
+      'wit', 'sarcasm', 'satire', 'anecdote', 'story'
+    ];
+    
+    // Use NLP to detect question patterns
+    const hasQuestionPattern = sentences.some(sentence => 
+      sentence.includes('?') || 
+      sentence.toLowerCase().includes('tell') || 
+      sentence.toLowerCase().includes('give') ||
+      sentence.toLowerCase().includes('can you') ||
+      sentence.toLowerCase().includes('would you')
+    );
+    
+    // Use NLP to detect imperative patterns
+    const hasImperativePattern = sentences.some(sentence => 
+      sentence.toLowerCase().startsWith('tell') ||
+      sentence.toLowerCase().startsWith('give') ||
+      sentence.toLowerCase().startsWith('make') ||
+      sentence.toLowerCase().startsWith('show')
+    );
+    
+    // Use NLP to detect emotional context
+    const emotionalKeywords = ['bored', 'sad', 'down', 'need cheering', 'cheer me up'];
+    const hasEmotionalContext = emotionalKeywords.some(keyword => lowerText.includes(keyword));
+    
+    // Use NLP token analysis for better understanding
+    const tokenTypes = doc.tokens().out(its.type, as.freqTable);
+    const hasActionWords = tokenTypes.some(([type, count]) => 
+      (type === 'verb' && count > 0) || (type === 'imperative' && count > 0)
+    );
+    
+    // Comprehensive intent classification
+    const isJokeIntent = jokePatterns.some(pattern => lowerText.includes(pattern)) ||
+                        hasQuestionPattern ||
+                        hasImperativePattern ||
+                        hasEmotionalContext ||
+                        hasActionWords;
+    
+    console.log('NLP Intent Classification:', {
+      text: text,
+      tokens: tokens,
+      sentences: sentences,
+      entities: entities,
+      tokenTypes: tokenTypes,
+      hasQuestionPattern,
+      hasImperativePattern,
+      hasEmotionalContext,
+      hasActionWords,
+      isJokeIntent
+    });
+    
+    return isJokeIntent;
+    
+  } catch (error) {
+    console.warn('NLP processing failed, falling back to enhanced keyword matching:', error);
+    return classifyIntentFallback(text);
   }
+}
+
+// Enhanced fallback intent classification for when NLP isn't available
+function classifyIntentFallback(text) {
+  const lowerText = text.toLowerCase();
+  const jokeKeywords = [
+    'joke', 'funny', 'laugh', 'make me laugh', 'tell me something funny',
+    'humor', 'hilarious', 'amusing', 'entertaining', 'comedy', 'pun',
+    'wit', 'sarcasm', 'satire', 'anecdote', 'story'
+  ];
+  
+  // Enhanced pattern matching
+  const hasJokeKeyword = jokeKeywords.some(keyword => lowerText.includes(keyword));
+  const hasQuestionPattern = lowerText.includes('?') && (
+    lowerText.includes('tell') || 
+    lowerText.includes('give') || 
+    lowerText.includes('can you') ||
+    lowerText.includes('would you')
+  );
+  const hasImperativePattern = lowerText.startsWith('tell') || 
+                              lowerText.startsWith('give') || 
+                              lowerText.startsWith('make') ||
+                              lowerText.startsWith('show');
+  const hasEmotionalContext = ['bored', 'sad', 'down', 'need cheering', 'cheer me up']
+    .some(keyword => lowerText.includes(keyword));
+  
+  return hasJokeKeyword || hasQuestionPattern || hasImperativePattern || hasEmotionalContext;
+}
+
+// Helper: Detect if user is asking for a joke - now using the hybrid architecture
+function isJokeIntent(text) {
+  return classifyUserIntent(text);
 }
 
 // WebLLM: Load model using proper ES module import
@@ -129,31 +244,36 @@ function waitForLibraries() {
       // Debug: Log what's available
       if (attempts % 10 === 0) { // Log every 10th attempt
         console.log(`Library check attempt ${attempts}:`, {
-          winkNLP: !!window.winkNLP,
-          model: !!window.model,
+          nlpInstance: !!window.nlpInstance,
+          its: !!window.its,
+          as: !!window.as,
           scriptErrors: window.scriptErrors || [],
           scriptsLoaded: window.scriptsLoaded || {}
         });
       }
       
-      if (window.winkNLP && window.model) {
-        console.log('All required libraries are now available');
+      if (window.nlpInstance && window.its && window.as) {
+        console.log('All required NLP libraries are now available');
         resolve(true);
       } else if (attempts >= maxAttempts) {
         console.warn('Timeout waiting for NLP libraries, proceeding with fallback');
         console.log('Final library status:', {
-          winkNLP: !!window.winkNLP,
-          model: !!window.model,
+          nlpInstance: !!window.nlpInstance,
+          its: !!window.its,
+          as: !!window.as,
           scriptErrors: window.scriptErrors || [],
           scriptsLoaded: window.scriptsLoaded || {}
         });
         
         // Provide specific guidance based on what failed
-        if (!window.winkNLP) {
-          console.error('winkNLP failed to load. Check network connectivity and CDN availability.');
+        if (!window.nlpInstance) {
+          console.error('winkNLP instance failed to load. Check network connectivity and CDN availability.');
         }
-        if (!window.model) {
-          console.error('winkNLP model failed to load. This is required for NLP functionality.');
+        if (!window.its) {
+          console.error('winkNLP its helper failed to load. This is required for NLP functionality.');
+        }
+        if (!window.as) {
+          console.error('winkNLP as helper failed to load. This is required for NLP functionality.');
         }
         
         resolve(false);
@@ -182,60 +302,61 @@ function hideLoadingIndicator() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM loaded, starting initialization...');
+  console.log('DOM loaded, starting hybrid architecture initialization...');
   
   // Enable UI immediately - don't wait for model loading
   userInput.disabled = false;
   chatForm.querySelector('button').disabled = false;
   
-  updateLoadingStatus('Loading NLP libraries...');
+  updateLoadingStatus('Loading NLP libraries for intent classification...');
   
   // Wait for CDN libraries to load
-  console.log('Waiting for CDN libraries...');
+  console.log('Waiting for NLP libraries for hybrid architecture...');
   const librariesLoaded = await waitForLibraries();
-  console.log('Library loading result:', librariesLoaded);
+  console.log('NLP library loading result:', librariesLoaded);
   
-  // Initialize NLP
+  // Initialize NLP for the hybrid architecture
   if (librariesLoaded && initializeNLP()) {
-    console.log('NLP libraries loaded successfully');
-    updateLoadingStatus('NLP ready - AI model loading in background...');
+    console.log('NLP libraries loaded successfully for hybrid architecture');
+    updateLoadingStatus('NLP ready for intent classification - AI model loading in background...');
     if (modelStatus) {
       modelStatus.textContent = 'NLP + Loading AI...';
     }
+    
+    // Show welcome message with NLP confirmation
+    let welcomeMessage = "Hello! I'm JokeBot 🤖 with advanced NLP intent classification! Ask me for a joke about any topic!";
+    welcomeMessage += " (AI model loading in background for joke generation - will be available soon!)";
+    appendMessage('bot', welcomeMessage);
+    
   } else {
-    console.log('Failed to initialize NLP, using fallback mode');
-    updateLoadingStatus('Fallback mode - AI model loading in background...');
+    console.log('Failed to initialize NLP, using fallback mode for intent classification');
+    updateLoadingStatus('Fallback intent classification - AI model loading in background...');
     if (modelStatus) {
       modelStatus.textContent = 'Fallback + Loading AI...';
     }
+    
+    // Show welcome message with fallback confirmation
+    let welcomeMessage = "Hello! I'm JokeBot 🤖 with fallback intent classification! Ask me for a joke about any topic!";
+    welcomeMessage += " (AI model loading in background for joke generation - will be available soon!)";
+    appendMessage('bot', welcomeMessage);
   }
   
   // Hide loading indicator and show chat immediately
   hideLoadingIndicator();
   
-  // Show welcome message immediately
-  let welcomeMessage = "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic!";
-  if (!nlp) {
-    welcomeMessage += " (AI model loading in background - will be available soon!)";
-  } else {
-    welcomeMessage += " (AI model loading in background - will be available soon!)";
-  }
-  
-  appendMessage('bot', welcomeMessage);
-  
-  // Load WebLLM in background (non-blocking)
-  console.log('Starting WebLLM background loading...');
+  // Load WebLLM in background (non-blocking) - this is the heavy part of the hybrid architecture
+  console.log('Starting WebLLM background loading for joke generation...');
   
   // Show background loading message
-  appendMessage('bot', "⏳ Loading AI model in background... This may take a few minutes.");
+  appendMessage('bot', "⏳ Loading AI model in background for joke generation... This may take a few minutes.");
   
   loadWebLLMInBackground();
 });
 
-// Load WebLLM in background without blocking UI
+// Load WebLLM in background without blocking UI - this is the heavy part of the hybrid architecture
 async function loadWebLLMInBackground() {
   try {
-    console.log('Background: Starting WebLLM initialization...');
+    console.log('Background: Starting WebLLM initialization for joke generation...');
     
     // Update status to show background loading
     if (modelStatus) {
@@ -246,14 +367,14 @@ async function loadWebLLMInBackground() {
     }
     
     // Create a progress message that we'll update
-    const progressMsg = appendMessage('bot', "🔄 Initializing AI model...");
+    const progressMsg = appendMessage('bot', "🔄 Initializing AI model for joke generation...");
     
     // Set up progress tracking
     let lastProgress = 0;
     const progressInterval = setInterval(() => {
       if (progressMsg && lastProgress < 90) {
         lastProgress += Math.random() * 10;
-        progressMsg.textContent = `🔄 Initializing AI model... ${Math.round(lastProgress)}%`;
+        progressMsg.textContent = `🔄 Initializing AI model for joke generation... ${Math.round(lastProgress)}%`;
       }
     }, 2000);
     
@@ -264,7 +385,7 @@ async function loadWebLLMInBackground() {
     
     // Model loaded successfully - update UI
     if (webllmLoaded) {
-      console.log('Background: WebLLM loaded successfully');
+      console.log('Background: WebLLM loaded successfully for joke generation');
       
       // Update status
       if (modelStatus) {
@@ -282,21 +403,21 @@ async function loadWebLLMInBackground() {
       if (progressMsg && progressMsg.parentNode) {
         progressMsg.parentNode.removeChild(progressMsg);
       }
-      appendMessage('bot', "🎉 AI model is now ready! You can now get AI-generated jokes!");
+      appendMessage('bot', "🎉 AI model is now ready for joke generation! You can now get AI-generated jokes!");
       
       // Update loading status
-      updateLoadingStatus('AI model ready!');
+      updateLoadingStatus('AI model ready for joke generation!');
       
     } else {
       console.log('Background: WebLLM failed to load');
       if (modelStatus) {
         modelStatus.textContent = nlp ? 'NLP Only' : 'Fallback Only';
       }
-      updateLoadingStatus('AI model failed to load - using fallback mode');
+      updateLoadingStatus('AI model failed to load - using fallback mode for joke generation');
       
       // Update the loading message to show failure
       if (progressMsg) {
-        progressMsg.textContent = "❌ AI model failed to load. Using fallback mode.";
+        progressMsg.textContent = "❌ AI model failed to load. Using fallback mode for joke generation.";
       }
     }
     
@@ -305,11 +426,11 @@ async function loadWebLLMInBackground() {
     if (modelStatus) {
       modelStatus.textContent = nlp ? 'NLP Only' : 'Fallback Only';
     }
-    updateLoadingStatus('AI model failed to load - using fallback mode');
+    updateLoadingStatus('AI model failed to load - using fallback mode for joke generation');
     
     // Update the loading message to show failure
     if (progressMsg) {
-      progressMsg.textContent = "❌ AI model failed to load. Using fallback mode.";
+      progressMsg.textContent = "❌ AI model failed to load. Using fallback mode for joke generation.";
     }
     
     appendMessage('bot', "⚠️ AI model failed to load. You can still use fallback jokes!");
@@ -432,21 +553,27 @@ chatForm.addEventListener('submit', async (e) => {
   const text = userInput.value.trim();
   if (!text) return;
   
-      // Check for status command
-    if (text.toLowerCase().includes('status') || text.toLowerCase().includes('loading')) {
-      let statusMessage = "📊 Current Status:\n";
-      statusMessage += `• NLP: ${nlp ? '✅ Ready' : '❌ Not available'}\n`;
-      statusMessage += `• AI Model: ${webllmLoaded ? '✅ Ready' : '⏳ Loading...'}\n`;
-      
-      if (modelStatus) {
-        statusMessage += `• Status: ${modelStatus.textContent}`;
-      }
-      
-      appendMessage('user', text);
-      userInput.value = '';
-      appendMessage('bot', statusMessage);
-      return;
+  // Check for status command
+  if (text.toLowerCase().includes('status') || text.toLowerCase().includes('loading')) {
+    let statusMessage = "📊 Hybrid Architecture Status:\n";
+    statusMessage += `• Intent Classification (NLP): ${nlp ? '✅ winkNLP Ready' : '❌ Fallback Mode'}\n`;
+    statusMessage += `• Joke Generation (AI): ${webllmLoaded ? '✅ WebLLM Ready' : '⏳ Loading...'}\n`;
+    
+    if (modelStatus) {
+      statusMessage += `• Overall Status: ${modelStatus.textContent}`;
     }
+    
+    // Add architecture explanation
+    statusMessage += "\n\n🏗️ Architecture:\n";
+    statusMessage += "• Lightweight NLP for instant intent classification\n";
+    statusMessage += "• Heavy WebLLM only for joke generation\n";
+    statusMessage += "• Responsive UX with background AI loading";
+    
+    appendMessage('user', text);
+    userInput.value = '';
+    appendMessage('bot', statusMessage);
+    return;
+  }
   
   appendMessage('user', text);
   userInput.value = '';
@@ -456,14 +583,22 @@ chatForm.addEventListener('submit', async (e) => {
   userInput.disabled = true;
 
   let response = '';
+  
+  // Step 1: Use lightweight NLP for intent classification (hybrid architecture)
   if (isJokeIntent(text)) {
+    console.log('Intent classified as joke request - proceeding to joke generation');
+    
+    // Step 2: Only activate heavy WebLLM for joke generation after intent confirmation
     if (webllmLoaded && webllmEngine) {
+      console.log('Using WebLLM for joke generation (hybrid architecture)');
       response = await getWebLLMJoke(text);
     } else {
+      console.log('WebLLM not ready, using fallback jokes (hybrid architecture fallback)');
       response = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
     }
   } else {
-    response = "I'm here to tell jokes! Ask me for a joke about any topic.";
+    // Not a joke intent - provide helpful guidance
+    response = "I'm here to tell jokes! Ask me for a joke about any topic. I use advanced NLP to understand your intent and AI to generate creative jokes.";
   }
 
   hideTypingIndicator();
