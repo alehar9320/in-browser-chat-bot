@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>In-Browser Joke Chatbot</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <span class="chat-title">JokeBot 🤖</span>
+      <span class="status-indicator" aria-label="Bot online" title="Bot online"></span>
+    </div>
+    <div id="chat-window" class="chat-window" aria-live="polite" aria-label="Chat messages"></div>
+    <div id="typing-indicator" class="typing-indicator" style="display:none;" aria-live="polite" aria-label="Bot is typing">
+      <span></span><span></span><span></span>
+      <span class="typing-text">JokeBot is typing...</span>
+    </div>
+    <form id="chat-form" autocomplete="off" aria-label="Send a message">
+      <input type="text" id="user-input" placeholder="Ask for a joke about..." required aria-label="Message input" />
+      <button type="submit" aria-label="Send message">Send</button>
+    </form>
+    <div id="loading" class="loading" style="display:none;">Loading JokeBot...</div>
+  </div>
+  <script src="chatbot.js"></script>
+</body>
+</html>
