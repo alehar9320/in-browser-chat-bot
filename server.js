@@ -1,27 +1,27 @@
-// Importera nödvändiga paket
+// Import necessary packages
 const express = require('express');
 const cors = require('cors');
 const winkNLP = require('wink-nlp');
 const model = require('wink-eng-lite-web-model');
 const nlp = winkNLP(model);
 
-// Importera nödvändiga funktioner från wink-nlp
+// Import necessary functions from wink-nlp
 const {
     its,
     as
 } = nlp;
 
-// Skapa en Express-app
+// Create an Express app
 const app = express();
 const port = 3000;
 
 // Middleware:
-// Aktivera CORS för att låta din front-end (som körs på en annan port) prata med servern.
+// Enable CORS to allow your front-end (running on a different port) to communicate with the server.
 app.use(cors());
-// Tillåt servern att läsa JSON-data från inkommande förfrågningar.
+// Allow the server to read JSON data from incoming requests.
 app.use(express.json());
 
-// Skapa en POST-endpoint för textanalys
+// Create a POST endpoint for text analysis
 app.post('/analyze', (req, res) => {
     try {
         const text = req.body.text;
@@ -30,35 +30,35 @@ app.post('/analyze', (req, res) => {
             return res.status(400).json({ error: 'Text input is required.' });
         }
         
-        // Analysera texten med winkNLP
+        // Analyze the text with winkNLP
         const doc = nlp.readDoc(text);
 
-        // Exempel på analys:
-        // 1. Räkna antalet meningar.
+        // Example analysis:
+        // 1. Count the number of sentences.
         const sentenceCount = doc.sentences().out().length;
 
-        // 2. Extrahera nyckelord (verkliga substantiv)
+        // 2. Extract keywords (real nouns)
         const nouns = doc.tokens().filter(its.pos, 'NOUN').out();
 
-        // 3. Extrahera entiteter (t.ex. datum, platser, personer)
+        // 3. Extract entities (e.g., dates, places, people)
         const entities = doc.entities().out();
         
-        // Skicka tillbaka resultatet som JSON
+        // Send back the result as JSON
         res.json({
             originalText: text,
             sentenceCount: sentenceCount,
             nouns: nouns,
             entities: entities,
-            message: 'Analys lyckades!'
+            message: 'Analysis successful!'
         });
 
     } catch (error) {
-        console.error('Analys misslyckades:', error);
-        res.status(500).json({ error: 'Ett serverfel uppstod.' });
+        console.error('Analysis failed:', error);
+        res.status(500).json({ error: 'A server error occurred.' });
     }
 });
 
-// Starta servern
+// Start the server
 app.listen(port, () => {
-    console.log(`Server körs på http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
