@@ -1,43 +1,55 @@
+import { fallbackJokes } from './fallbackJokes.js';
+
+// winkNLP setup
+import winkNLP from 'wink-nlp';
+import model from 'wink-eng-lite-web-model';
+const nlp = winkNLP(model);
+const its = nlp.its;
+const as = nlp.as;
+
+// WebLLM setup
+let webllm = null;
+let webllmLoaded = false;
+let webllmEngine = null;
+
 const chatWindow = document.getElementById('chat-window');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
-
-let modelLoaded = false;
-let llm = null;
 const modelStatus = document.getElementById('model-status');
 
-let fallbackJokes = [];
-let fallbackJokesLoaded = false;
-
-async function loadFallbackJokes() {
-  if (!fallbackJokesLoaded) {
-    const module = await import('./fallbackJokes.js');
-    fallbackJokes = module.fallbackJokes;
-    fallbackJokesLoaded = true;
-  }
+// Helper: Detect if user is asking for a joke
+function isJokeIntent(text) {
+  const doc = nlp.readDoc(text);
+  const tokens = doc.tokens().out(as.array);
+  // Simple rule: look for 'joke' or 'funny' or 'make me laugh' etc.
+  const jokeKeywords = ['joke', 'funny', 'laugh', 'make me laugh', 'tell me something funny'];
+  const lowerText = text.toLowerCase();
+  return jokeKeywords.some(keyword => lowerText.includes(keyword));
 }
 
-async function loadLLM() {
+// WebLLM: Load Phi-3 Mini (3.8B)
+async function loadWebLLM() {
   try {
-    if (window.transformers && window.transformers.env) {
-      window.transformers.env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.13.0/dist/wasm/';
-      await window.transformers.setBackend('wasm');
-    }
-    llm = await window.transformers.pipeline('text-generation', 'Xenova/tinyllama-1.1b-chat-v1.0');
-    modelLoaded = true;
-    modelStatus.textContent = 'Model ready!';
+    if (!window.webllm) throw new Error('WebLLM not loaded');
+    webllmEngine = new window.webllm.LLM();
+    await webllmEngine.reload('phi3-mini-4k-instruct-q4f16_1');
+    webllmLoaded = true;
+    if (modelStatus) modelStatus.textContent = 'Model ready!';
+    console.log('WebLLM loaded: Phi-3 Mini');
   } catch (e) {
-    modelLoaded = false;
-    console.error('LLM load error:', e);
-    // Do not update modelStatus to a failure message
+    webllmLoaded = false;
+    if (modelStatus) modelStatus.textContent = 'Model failed to load.';
+    console.error('WebLLM load error:', e);
   }
 }
 
-// Call loadLLM and loadFallbackJokes on page load
 window.addEventListener('DOMContentLoaded', async () => {
-  await loadFallbackJokes();
-  await loadLLM();
+  userInput.disabled = true;
+  chatForm.querySelector('button').disabled = true;
+  await loadWebLLM();
   appendMessage('bot', "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic, and I'll do my best to make you laugh!");
+  userInput.disabled = false;
+  chatForm.querySelector('button').disabled = false;
 });
 
 function appendMessage(sender, text) {
@@ -56,27 +68,23 @@ function hideTypingIndicator() {
   document.getElementById('typing-indicator').style.display = 'none';
 }
 
-async function getLLMJoke(userText) {
-  if (!llm) return null;
+async function getWebLLMJoke(userText) {
+  if (!webllmLoaded || !webllmEngine) return null;
   const prompt = `You are a helpful, family-friendly chatbot that tells jokes. If the user asks for a joke about a specific topic, generate a short joke about that topic. If the topic is unclear, tell a general joke.\nUser: ${userText}\nJokeBot:`;
   try {
-    const output = await llm(prompt, { max_new_tokens: 48 });
-    if (output && output.length && output[0].generated_text) {
-      let joke = output[0].generated_text.replace(prompt, '').trim();
-      joke = joke.split('\n')[0].trim();
-      if (!joke) joke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
-      return joke;
-    }
+    const result = await webllmEngine.generate(prompt, { max_tokens: 48 });
+    let joke = result.choices?.[0]?.text?.trim() || '';
+    joke = joke.split('\n')[0].trim();
+    if (!joke) joke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+    return joke;
   } catch (e) {
-    console.error('LLM generation error:', e);
+    console.error('WebLLM generation error:', e);
     return fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
   }
-  return fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
 }
 
 chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  await loadFallbackJokes(); // Ensure fallbackJokes are loaded before use
   const text = userInput.value.trim();
   if (!text) return;
   appendMessage('user', text);
@@ -87,10 +95,14 @@ chatForm.addEventListener('submit', async (e) => {
   userInput.disabled = true;
 
   let response = '';
-  if (modelLoaded && llm) {
-    response = await getLLMJoke(text);
+  if (isJokeIntent(text)) {
+    if (webllmLoaded && webllmEngine) {
+      response = await getWebLLMJoke(text);
+    } else {
+      response = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+    }
   } else {
-    response = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+    response = "I'm here to tell jokes! Ask me for a joke about any topic.";
   }
 
   hideTypingIndicator();
