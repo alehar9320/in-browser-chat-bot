@@ -1,0 +1,90 @@
+# Cursor AI Agent Configuration
+
+# This file helps ground Cursor's AI Agent with project-specific context and preferences
+
+## Project Overview
+
+You are working on "In-Browser Chat Bot" - a local in-client chat bot powered by a large language model that provides contextual answers based on user intent.
+
+## Core Principles
+
+- **Privacy First**: All processing should happen locally in the browser
+- **Intent-Based NLP**: Focus on understanding and responding to user intent naturally
+- **Modular Architecture**: Write clean, well-documented, and maintainable code
+- **Modern Web Standards**: Use current best practices for accessibility and performance
+
+## Technology Stack
+
+- **Primary Languages**: JavaScript, TypeScript, HTML, CSS
+- **Frameworks**: None (vanilla web technologies preferred)
+- **Target Environment**: Modern web browsers with local execution
+
+## Code Quality Standards
+
+- Write self-documenting code with clear variable and function names
+- Include JSDoc comments for complex functions and classes
+- Follow consistent formatting and indentation
+- Implement proper error handling and edge case management
+- Use TypeScript for type safety when possible
+
+## Architecture Guidelines
+
+- Keep components loosely coupled and highly cohesive
+- Implement clear separation of concerns
+- Use design patterns appropriate for browser-based applications
+- Ensure code is testable and maintainable
+- Prefer composition over inheritance
+
+## Performance Considerations
+
+- Minimize bundle size and loading times
+- Implement efficient algorithms for natural language processing
+- Use appropriate data structures for the task at hand
+- Consider memory usage for large language model operations
+- Optimize for responsive user interactions
+
+## Security & Privacy
+
+- Never expose sensitive information in client-side code
+- Validate all user inputs thoroughly
+- Implement proper sanitization for user-generated content
+- Ensure local data storage follows privacy best practices
+
+## Accessibility
+
+- Follow WCAG guidelines for web accessibility
+- Provide keyboard navigation support
+- Include proper ARIA labels and semantic HTML
+- Ensure sufficient color contrast and readable fonts
+- Support screen readers and assistive technologies
+
+## Testing Strategy
+
+- Write unit tests for core functionality
+- Include integration tests for user workflows
+- Test across different browsers and devices
+- Implement error boundary testing
+
+## Documentation Requirements
+
+- Maintain clear README files
+- Document API interfaces and data structures
+- Include setup and deployment instructions
+- Provide usage examples and code samples
+
+## When Making Changes
+
+- Consider the impact on local processing capabilities
+- Ensure changes maintain privacy-first approach
+- Test thoroughly before committing
+- Update documentation as needed
+- Follow the established code style and patterns
+
+## Excluded Areas
+
+- node_modules
+- dist
+- build
+- Any generated or compiled files
+
+Remember: You are building a tool that should work entirely in the user's browser without external dependencies, prioritizing their privacy and providing intelligent, contextual responses to their queries.
