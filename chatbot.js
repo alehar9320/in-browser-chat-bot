@@ -10,18 +10,26 @@ const modelStatus = document.getElementById('model-status');
 async function loadLLM() {
   modelStatus.textContent = 'Loading model...';
   try {
-    // Load DistilGPT2 model and tokenizer from Transformers.js
-    llm = await window.transformers.pipeline('text-generation', 'Xenova/distilgpt2');
+    // Ensure the backend is set to 'wasm' for browser compatibility
+    if (window.transformers && window.transformers.env) {
+      window.transformers.env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.13.0/dist/wasm/';
+      await window.transformers.setBackend('wasm');
+    }
+    llm = await window.transformers.pipeline('text-generation', 'Xenova/tinyllama-1.1b-chat-v1.0');
     modelLoaded = true;
     modelStatus.textContent = 'Model ready!';
   } catch (e) {
     modelStatus.textContent = 'Model failed to load. Using fallback.';
     modelLoaded = false;
+    console.error('LLM load error:', e);
   }
 }
 
 // Call loadLLM on page load
-window.addEventListener('DOMContentLoaded', loadLLM);
+window.addEventListener('DOMContentLoaded', () => {
+  loadLLM();
+  appendMessage('bot', "Hello! I'm JokeBot 🤖. Ask me for a joke about any topic, and I'll do my best to make you laugh!");
+});
 
 const jokes = {
   general: [
@@ -69,19 +77,19 @@ const fallbackJokes = [
 
 async function getLLMJoke(userText) {
   if (!llm) return null;
-  // Prompt engineering: steer the model to tell a joke
-  const prompt = `Tell me a short, family-friendly joke about: ${userText}`;
+  // Enhanced prompt for intent-based joke generation
+  const prompt = `You are a helpful, family-friendly chatbot that tells jokes. If the user asks for a joke about a specific topic, generate a short joke about that topic. If the topic is unclear, tell a general joke.\nUser: ${userText}\nJokeBot:`;
   try {
-    const output = await llm(prompt, { max_new_tokens: 40 });
+    const output = await llm(prompt, { max_new_tokens: 48 });
     if (output && output.length && output[0].generated_text) {
-      // Remove the prompt from the output if present
       let joke = output[0].generated_text.replace(prompt, '').trim();
-      // If the model output is empty, fallback
+      // Remove any trailing incomplete sentences
+      joke = joke.split('\n')[0].trim();
       if (!joke) joke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
       return joke;
     }
   } catch (e) {
-    // Fallback on error
+    console.error('LLM generation error:', e);
     return fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
   }
   return fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
