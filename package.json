@@ -1,0 +1,18 @@
+{
+  "name": "in-browser-chat-bot",
+  "version": "1.0.0",
+  "description": "A sophisticated in-browser chat bot powered by a large language model that provides intelligent responses based on user intent. This application runs locally in the client's browser while leveraging powerful language model capabilities to deliver contextual and helpful responses.",
+  "main": "chatbot.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "wink-eng-lite-web-model": "^1.8.1",
+    "wink-nlp": "^2.4.0"
+  }
+}

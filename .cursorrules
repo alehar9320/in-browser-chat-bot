@@ -88,3 +88,4 @@ You are working on "In-Browser Chat Bot" - a local in-client chat bot powered by
 - Any generated or compiled files
 
 Remember: You are building a tool that should work entirely in the user's browser without external dependencies, prioritizing their privacy and providing intelligent, contextual responses to their queries.
+
