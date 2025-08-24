@@ -1,4 +1,4 @@
-import { fallbackJokes } from '../../fallbackJokes.js';
+const { fallbackJokes } = require('../../fallbackJokes.js');
 
 // Mock DOM elements
 document.body.innerHTML = `
@@ -39,7 +39,7 @@ describe('Intent Classification', () => {
       'Tell me a joke',
       'I want a joke',
       'Make me laugh',
-      'Give me something funny'
+      'Give me something funny',
     ];
 
     jokePhrases.forEach(phrase => {

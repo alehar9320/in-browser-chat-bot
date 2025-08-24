@@ -7,8 +7,8 @@ const nlp = winkNLP(model);
 
 // Import necessary functions from wink-nlp
 const {
-    its,
-    as
+  its,
+  as,
 } = nlp;
 
 // Create an Express app
@@ -23,61 +23,61 @@ app.use(express.json());
 
 // Create a POST endpoint for text analysis
 app.post('/analyze', (req, res) => {
-    try {
-        const text = req.body.text;
+  try {
+    const text = req.body.text;
         
-        if (!text) {
-            return res.status(400).json({ error: 'Text input is required.' });
-        }
-        
-        // Analyze the text with winkNLP
-        const doc = nlp.readDoc(text);
-
-        // Example analysis:
-        // 1. Count the number of sentences.
-        const sentenceCount = doc.sentences().out().length;
-
-        // 2. Extract keywords (real nouns)
-        const nouns = doc.tokens().filter(its.pos, 'NOUN').out();
-
-        // 3. Extract entities (e.g., dates, places, people)
-        const entities = doc.entities().out();
-        
-        // Send back the result as JSON
-        res.json({
-            originalText: text,
-            sentenceCount: sentenceCount,
-            nouns: nouns,
-            entities: entities,
-            message: 'Analysis successful!'
-        });
-
-    } catch (error) {
-        console.error('Analysis failed:', error);
-        res.status(500).json({ error: 'A server error occurred.' });
+    if (!text) {
+      return res.status(400).json({ error: 'Text input is required.' });
     }
+        
+    // Analyze the text with winkNLP
+    const doc = nlp.readDoc(text);
+
+    // Example analysis:
+    // 1. Count the number of sentences.
+    const sentenceCount = doc.sentences().out().length;
+
+    // 2. Extract keywords (real nouns)
+    const nouns = doc.tokens().filter(its.pos, 'NOUN').out();
+
+    // 3. Extract entities (e.g., dates, places, people)
+    const entities = doc.entities().out();
+        
+    // Send back the result as JSON
+    res.json({
+      originalText: text,
+      sentenceCount: sentenceCount,
+      nouns: nouns,
+      entities: entities,
+      message: 'Analysis successful!',
+    });
+
+  } catch (error) {
+    console.error('Analysis failed:', error);
+    res.status(500).json({ error: 'A server error occurred.' });
+  }
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        version: '1.0.0',
-        nlp: {
-            engine: 'winkNLP',
-            model: 'wink-eng-lite-web-model',
-            status: 'ready'
-        },
-        server: {
-            uptime: process.uptime(),
-            memory: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
-            environment: process.env.NODE_ENV || 'development'
-        }
-    });
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    nlp: {
+      engine: 'winkNLP',
+      model: 'wink-eng-lite-web-model',
+      status: 'ready',
+    },
+    server: {
+      uptime: process.uptime(),
+      memory: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+      environment: process.env.NODE_ENV || 'development',
+    },
+  });
 });
 
 // Start the server
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on http://localhost:${port}`);
 });

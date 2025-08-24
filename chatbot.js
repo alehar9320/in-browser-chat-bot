@@ -27,8 +27,8 @@
  *            Enhanced Keyword Fallback → Intent Confirmed → WebLLM/Fallback Joke → Response
  */
 
-import { fallbackJokes } from './fallbackJokes.js';
-import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+const { fallbackJokes } = require('./fallbackJokes.js');
+import * as webllm from 'https://esm.run/@mlc-ai/web-llm';
 
 // Global variables for NLP - using the properly loaded libraries
 let nlp = null;
@@ -84,7 +84,7 @@ function classifyUserIntent(text) {
     const jokePatterns = [
       'joke', 'funny', 'laugh', 'make me laugh', 'tell me something funny',
       'humor', 'hilarious', 'amusing', 'entertaining', 'comedy', 'pun',
-      'wit', 'sarcasm', 'satire', 'anecdote', 'story'
+      'wit', 'sarcasm', 'satire', 'anecdote', 'story',
     ];
     
     // Use NLP to detect question patterns
@@ -93,7 +93,7 @@ function classifyUserIntent(text) {
       sentence.toLowerCase().includes('tell') || 
       sentence.toLowerCase().includes('give') ||
       sentence.toLowerCase().includes('can you') ||
-      sentence.toLowerCase().includes('would you')
+      sentence.toLowerCase().includes('would you'),
     );
     
     // Use NLP to detect imperative patterns
@@ -101,7 +101,7 @@ function classifyUserIntent(text) {
       sentence.toLowerCase().startsWith('tell') ||
       sentence.toLowerCase().startsWith('give') ||
       sentence.toLowerCase().startsWith('make') ||
-      sentence.toLowerCase().startsWith('show')
+      sentence.toLowerCase().startsWith('show'),
     );
     
     // Use NLP to detect emotional context
@@ -111,7 +111,7 @@ function classifyUserIntent(text) {
     // Use NLP token analysis for better understanding
     const tokenTypes = doc.tokens().out(its.type, as.freqTable);
     const hasActionWords = tokenTypes.some(([type, count]) => 
-      (type === 'verb' && count > 0) || (type === 'imperative' && count > 0)
+      (type === 'verb' && count > 0) || (type === 'imperative' && count > 0),
     );
     
     // Comprehensive intent classification
@@ -131,7 +131,7 @@ function classifyUserIntent(text) {
       hasImperativePattern,
       hasEmotionalContext,
       hasActionWords,
-      isJokeIntent
+      isJokeIntent,
     });
     
     return isJokeIntent;
@@ -148,7 +148,7 @@ function classifyIntentFallback(text) {
   const jokeKeywords = [
     'joke', 'funny', 'laugh', 'make me laugh', 'tell me something funny',
     'humor', 'hilarious', 'amusing', 'entertaining', 'comedy', 'pun',
-    'wit', 'sarcasm', 'satire', 'anecdote', 'story'
+    'wit', 'sarcasm', 'satire', 'anecdote', 'story',
   ];
   
   // Enhanced pattern matching
@@ -185,7 +185,7 @@ async function loadWebLLM() {
     
     // Get the selected model from the dropdown
     const modelSelection = document.getElementById('model-selection');
-    const selectedModel = modelSelection ? modelSelection.value : "Llama-3-8B-Instruct-q4f32_1-MLC-1k";
+    const selectedModel = modelSelection ? modelSelection.value : 'Llama-3-8B-Instruct-q4f32_1-MLC-1k';
     console.log('Selected model:', selectedModel);
     
     // Create engine instance with progress callback
@@ -248,7 +248,7 @@ function waitForLibraries() {
           its: !!window.its,
           as: !!window.as,
           scriptErrors: window.scriptErrors || [],
-          scriptsLoaded: window.scriptsLoaded || {}
+          scriptsLoaded: window.scriptsLoaded || {},
         });
       }
       
@@ -262,7 +262,7 @@ function waitForLibraries() {
           its: !!window.its,
           as: !!window.as,
           scriptErrors: window.scriptErrors || [],
-          scriptsLoaded: window.scriptsLoaded || {}
+          scriptsLoaded: window.scriptsLoaded || {},
         });
         
         // Provide specific guidance based on what failed
@@ -324,8 +324,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Show welcome message with NLP confirmation
-    let welcomeMessage = "Hello! I'm JokeBot 🤖 with advanced NLP intent classification! Ask me for a joke about any topic!";
-    welcomeMessage += " (AI model loading in background for joke generation - will be available soon!)";
+    let welcomeMessage = 'Hello! I\'m JokeBot 🤖 with advanced NLP intent classification! Ask me for a joke about any topic!';
+    welcomeMessage += ' (AI model loading in background for joke generation - will be available soon!)';
     appendMessage('bot', welcomeMessage);
     
   } else {
@@ -336,8 +336,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Show welcome message with fallback confirmation
-    let welcomeMessage = "Hello! I'm JokeBot 🤖 with fallback intent classification! Ask me for a joke about any topic!";
-    welcomeMessage += " (AI model loading in background for joke generation - will be available soon!)";
+    let welcomeMessage = 'Hello! I\'m JokeBot 🤖 with fallback intent classification! Ask me for a joke about any topic!';
+    welcomeMessage += ' (AI model loading in background for joke generation - will be available soon!)';
     appendMessage('bot', welcomeMessage);
   }
   
@@ -348,13 +348,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   console.log('Starting WebLLM background loading for joke generation...');
   
   // Show background loading message
-  appendMessage('bot', "⏳ Loading AI model in background for joke generation... This may take a few minutes.");
+  appendMessage('bot', '⏳ Loading AI model in background for joke generation... This may take a few minutes.');
   
   loadWebLLMInBackground();
 });
 
 // Load WebLLM in background without blocking UI - this is the heavy part of the hybrid architecture
 async function loadWebLLMInBackground() {
+  // Create a progress message that we'll update
+  const progressMsg = appendMessage('bot', '🔄 Initializing AI model for joke generation...');
+  
   try {
     console.log('Background: Starting WebLLM initialization for joke generation...');
     
@@ -365,9 +368,6 @@ async function loadWebLLMInBackground() {
         modelStatus.textContent = currentText.replace('Loading AI...', 'AI Loading...');
       }
     }
-    
-    // Create a progress message that we'll update
-    const progressMsg = appendMessage('bot', "🔄 Initializing AI model for joke generation...");
     
     // Set up progress tracking
     let lastProgress = 0;
@@ -403,7 +403,7 @@ async function loadWebLLMInBackground() {
       if (progressMsg && progressMsg.parentNode) {
         progressMsg.parentNode.removeChild(progressMsg);
       }
-      appendMessage('bot', "🎉 AI model is now ready for joke generation! You can now get AI-generated jokes!");
+      appendMessage('bot', '🎉 AI model is now ready for joke generation! You can now get AI-generated jokes!');
       
       // Update loading status
       updateLoadingStatus('AI model ready for joke generation!');
@@ -417,7 +417,7 @@ async function loadWebLLMInBackground() {
       
       // Update the loading message to show failure
       if (progressMsg) {
-        progressMsg.textContent = "❌ AI model failed to load. Using fallback mode for joke generation.";
+        progressMsg.textContent = '❌ AI model failed to load. Using fallback mode for joke generation.';
       }
     }
     
@@ -430,10 +430,10 @@ async function loadWebLLMInBackground() {
     
     // Update the loading message to show failure
     if (progressMsg) {
-      progressMsg.textContent = "❌ AI model failed to load. Using fallback mode for joke generation.";
+      progressMsg.textContent = '❌ AI model failed to load. Using fallback mode for joke generation.';
     }
     
-    appendMessage('bot', "⚠️ AI model failed to load. You can still use fallback jokes!");
+    appendMessage('bot', '⚠️ AI model failed to load. You can still use fallback jokes!');
   }
 }
 
@@ -457,32 +457,32 @@ async function getWebLLMJoke(userText) {
   if (!webllmLoaded || !webllmEngine) {
     // Check if model is still loading
     if (modelStatus && modelStatus.textContent.includes('Loading')) {
-      return "🤔 AI model is still loading in the background. Please wait a moment and try again, or I can tell you a fallback joke instead!";
+      return '🤔 AI model is still loading in the background. Please wait a moment and try again, or I can tell you a fallback joke instead!';
     }
     return null;
   }
   
   const messages = [
     {
-      content: "You are a helpful, family-friendly chatbot that tells jokes. Keep responses short and funny.",
-      role: "system",
+      content: 'You are a helpful, family-friendly chatbot that tells jokes. Keep responses short and funny.',
+      role: 'system',
     },
     {
       content: `Tell me a joke about: ${userText}`,
-      role: "user",
-    }
+      role: 'user',
+    },
   ];
   
   try {
     console.log('Generating joke with WebLLM...');
     
     // Use the streaming API for better user experience
-    let curMessage = "";
+    let curMessage = '';
     const completion = await webllmEngine.chat.completions.create({
       stream: true,
       messages,
       max_tokens: 100,
-      temperature: 0.8
+      temperature: 0.8,
     });
     
     for await (const chunk of completion) {
@@ -551,11 +551,11 @@ if (modelSelection) {
 chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = userInput.value.trim();
-  if (!text) return;
+  if (!text) {return;}
   
   // Check for status command
   if (text.toLowerCase().includes('status') || text.toLowerCase().includes('loading')) {
-    let statusMessage = "📊 Hybrid Architecture Status:\n";
+    let statusMessage = '📊 Hybrid Architecture Status:\n';
     statusMessage += `• Intent Classification (NLP): ${nlp ? '✅ winkNLP Ready' : '❌ Fallback Mode'}\n`;
     statusMessage += `• Joke Generation (AI): ${webllmLoaded ? '✅ WebLLM Ready' : '⏳ Loading...'}\n`;
     
@@ -564,10 +564,10 @@ chatForm.addEventListener('submit', async (e) => {
     }
     
     // Add architecture explanation
-    statusMessage += "\n\n🏗️ Architecture:\n";
-    statusMessage += "• Lightweight NLP for instant intent classification\n";
-    statusMessage += "• Heavy WebLLM only for joke generation\n";
-    statusMessage += "• Responsive UX with background AI loading";
+    statusMessage += '\n\n🏗️ Architecture:\n';
+    statusMessage += '• Lightweight NLP for instant intent classification\n';
+    statusMessage += '• Heavy WebLLM only for joke generation\n';
+    statusMessage += '• Responsive UX with background AI loading';
     
     appendMessage('user', text);
     userInput.value = '';
@@ -598,7 +598,7 @@ chatForm.addEventListener('submit', async (e) => {
     }
   } else {
     // Not a joke intent - provide helpful guidance
-    response = "I'm here to tell jokes! Ask me for a joke about any topic. I use advanced NLP to understand your intent and AI to generate creative jokes.";
+    response = 'I\'m here to tell jokes! Ask me for a joke about any topic. I use advanced NLP to understand your intent and AI to generate creative jokes.';
   }
 
   hideTypingIndicator();

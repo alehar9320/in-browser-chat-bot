@@ -1,5 +1,5 @@
 // Test setup file for Jest
-import '@testing-library/jest-dom';
+const jestDom = require('@testing-library/jest-dom');
 
 // Mock WebLLM for testing
 global.webllm = {
@@ -11,18 +11,18 @@ global.webllm = {
         create: jest.fn().mockResolvedValue({
           [Symbol.asyncIterator]: async function* () {
             yield { choices: [{ delta: { content: 'Test joke' } }] };
-          }
-        })
-      }
+          },
+        }),
+      },
     },
-    getMessage: jest.fn().mockResolvedValue('Test joke')
+    getMessage: jest.fn().mockResolvedValue('Test joke'),
   })),
   prebuiltAppConfig: {
     model_list: [
       { model_id: 'test-model-1' },
-      { model_id: 'test-model-2' }
-    ]
-  }
+      { model_id: 'test-model-2' },
+    ],
+  },
 };
 
 // Mock winkNLP
@@ -31,23 +31,23 @@ global.winkNLP = jest.fn().mockReturnValue({
     tokens: jest.fn().mockReturnValue({
       out: jest.fn().mockReturnValue(['test', 'joke']),
       filter: jest.fn().mockReturnValue({
-        out: jest.fn().mockReturnValue(['joke'])
-      })
+        out: jest.fn().mockReturnValue(['joke']),
+      }),
     }),
     sentences: jest.fn().mockReturnValue({
-      out: jest.fn().mockReturnValue(['Tell me a joke'])
+      out: jest.fn().mockReturnValue(['Tell me a joke']),
     }),
     entities: jest.fn().mockReturnValue({
-      out: jest.fn().mockReturnValue([])
-    })
+      out: jest.fn().mockReturnValue([]),
+    }),
   }),
   its: {
     pos: 'NOUN',
-    detail: 'detail'
+    detail: 'detail',
   },
   as: {
-    freqTable: 'freqTable'
-  }
+    freqTable: 'freqTable',
+  },
 });
 
 // Mock console methods in tests
@@ -55,5 +55,5 @@ global.console = {
   ...console,
   log: jest.fn(),
   warn: jest.fn(),
-  error: jest.fn()
+  error: jest.fn(),
 };
