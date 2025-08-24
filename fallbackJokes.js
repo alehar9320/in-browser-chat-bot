@@ -1,5 +1,5 @@
 // fallbackJokes.js
-const fallbackJokes = [
+export const fallbackJokes = [
   // General jokes
   'Why don\'t scientists trust atoms? Because they make up everything!',
   'Why did the scarecrow win an award? Because he was outstanding in his field!',
@@ -15,5 +15,3 @@ const fallbackJokes = [
   'Why was the computer cold? It left its Windows open!',
   'Why did the smartphone need glasses? Because it lost its contacts!',
 ];
-
-module.exports = { fallbackJokes };

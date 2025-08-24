@@ -27,7 +27,7 @@
  *            Enhanced Keyword Fallback → Intent Confirmed → WebLLM/Fallback Joke → Response
  */
 
-const { fallbackJokes } = require('./fallbackJokes.js');
+import { fallbackJokes } from './fallbackJokes.js';
 import * as webllm from 'https://esm.run/@mlc-ai/web-llm';
 
 // Global variables for NLP - using the properly loaded libraries
