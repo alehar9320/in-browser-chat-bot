@@ -28,12 +28,14 @@
  */
 
 import { fallbackJokes } from './fallbackJokes.js';
+import winkNLP from 'https://esm.sh/wink-nlp@2.4.0';
+import model from 'https://esm.sh/wink-eng-lite-web-model@1.0.0';
 import * as webllm from 'https://esm.run/@mlc-ai/web-llm';
 
-// Global variables for NLP - using the properly loaded libraries
-let nlp = null;
-let its = null;
-let as = null;
+// winkNLP NLP setup using npm modules
+const nlp = winkNLP(model);
+const its = nlp.its;
+const as = nlp.as;
 
 // WebLLM setup
 let webllmLoaded = false;
@@ -44,39 +46,21 @@ const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
 const modelStatus = document.getElementById('model-status');
 
-// Initialize winkNLP when libraries are ready - using the hybrid architecture
+// No need for dynamic initialization; nlp, its, as are ready from import
 function initializeNLP() {
-  try {
-    // Check for the properly initialized winkNLP instance
-    if (window.nlpInstance && window.its && window.as) {
-      nlp = window.nlpInstance;
-      its = window.its;
-      as = window.as;
-      console.log('winkNLP initialized successfully for hybrid architecture');
-      return true;
-    }
-  } catch (error) {
-    console.error('Error initializing winkNLP:', error);
-  }
-  return false;
+  // For compatibility if called elsewhere
+  return true;
 }
 
 // Enhanced intent classification using winkNLP for the hybrid architecture
 function classifyUserIntent(text) {
-  if (!nlp) {
-    // Fallback to basic keyword matching if NLP isn't ready
-    return classifyIntentFallback(text);
-  }
-  
   try {
     // Use winkNLP for sophisticated intent classification
     const doc = nlp.readDoc(text);
-    
     // Extract key information for intent classification
     const tokens = doc.tokens().out();
     const sentences = doc.sentences().out();
     const entities = doc.entities().out(its.detail);
-    
     // Enhanced intent classification using NLP features
     const lowerText = text.toLowerCase();
     
@@ -232,58 +216,7 @@ async function loadWebLLM() {
   }
 }
 
-// Wait for CDN scripts to load and initialize NLP
-function waitForLibraries() {
-  return new Promise((resolve) => {
-    let attempts = 0;
-    const maxAttempts = 150; // 15 seconds timeout
-    
-    const checkLibraries = () => {
-      attempts++;
-      
-      // Debug: Log what's available
-      if (attempts % 10 === 0) { // Log every 10th attempt
-        console.log(`Library check attempt ${attempts}:`, {
-          nlpInstance: !!window.nlpInstance,
-          its: !!window.its,
-          as: !!window.as,
-          scriptErrors: window.scriptErrors || [],
-          scriptsLoaded: window.scriptsLoaded || {},
-        });
-      }
-      
-      if (window.nlpInstance && window.its && window.as) {
-        console.log('All required NLP libraries are now available');
-        resolve(true);
-      } else if (attempts >= maxAttempts) {
-        console.warn('Timeout waiting for NLP libraries, proceeding with fallback');
-        console.log('Final library status:', {
-          nlpInstance: !!window.nlpInstance,
-          its: !!window.its,
-          as: !!window.as,
-          scriptErrors: window.scriptErrors || [],
-          scriptsLoaded: window.scriptsLoaded || {},
-        });
-        
-        // Provide specific guidance based on what failed
-        if (!window.nlpInstance) {
-          console.error('winkNLP instance failed to load. Check network connectivity and CDN availability.');
-        }
-        if (!window.its) {
-          console.error('winkNLP its helper failed to load. This is required for NLP functionality.');
-        }
-        if (!window.as) {
-          console.error('winkNLP as helper failed to load. This is required for NLP functionality.');
-        }
-        
-        resolve(false);
-      } else {
-        setTimeout(checkLibraries, 100);
-      }
-    };
-    checkLibraries();
-  });
-}
+// No longer needed: winkNLP is always available via import
 
 // Update loading indicator
 function updateLoadingStatus(message) {
@@ -303,53 +236,30 @@ function hideLoadingIndicator() {
 
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM loaded, starting hybrid architecture initialization...');
-  
+
   // Enable UI immediately - don't wait for model loading
   userInput.disabled = false;
   chatForm.querySelector('button').disabled = false;
-  
-  updateLoadingStatus('Loading NLP libraries for intent classification...');
-  
-  // Wait for CDN libraries to load
-  console.log('Waiting for NLP libraries for hybrid architecture...');
-  const librariesLoaded = await waitForLibraries();
-  console.log('NLP library loading result:', librariesLoaded);
-  
-  // Initialize NLP for the hybrid architecture
-  if (librariesLoaded && initializeNLP()) {
-    console.log('NLP libraries loaded successfully for hybrid architecture');
-    updateLoadingStatus('NLP ready for intent classification - AI model loading in background...');
-    if (modelStatus) {
-      modelStatus.textContent = 'NLP + Loading AI...';
-    }
-    
-    // Show welcome message with NLP confirmation
-    let welcomeMessage = 'Hello! I\'m JokeBot 🤖 with advanced NLP intent classification! Ask me for a joke about any topic!';
-    welcomeMessage += ' (AI model loading in background for joke generation - will be available soon!)';
-    appendMessage('bot', welcomeMessage);
-    
-  } else {
-    console.log('Failed to initialize NLP, using fallback mode for intent classification');
-    updateLoadingStatus('Fallback intent classification - AI model loading in background...');
-    if (modelStatus) {
-      modelStatus.textContent = 'Fallback + Loading AI...';
-    }
-    
-    // Show welcome message with fallback confirmation
-    let welcomeMessage = 'Hello! I\'m JokeBot 🤖 with fallback intent classification! Ask me for a joke about any topic!';
-    welcomeMessage += ' (AI model loading in background for joke generation - will be available soon!)';
-    appendMessage('bot', welcomeMessage);
+
+  updateLoadingStatus('NLP ready for intent classification - AI model loading in background...');
+  if (modelStatus) {
+    modelStatus.textContent = 'NLP + Loading AI...';
   }
-  
+
+  // Show welcome message with NLP confirmation
+  let welcomeMessage = 'Hello! I\'m JokeBot 🤖 with advanced NLP intent classification! Ask me for a joke about any topic!';
+  welcomeMessage += ' (AI model loading in background for joke generation - will be available soon!)';
+  appendMessage('bot', welcomeMessage);
+
   // Hide loading indicator and show chat immediately
   hideLoadingIndicator();
-  
+
   // Load WebLLM in background (non-blocking) - this is the heavy part of the hybrid architecture
   console.log('Starting WebLLM background loading for joke generation...');
-  
+
   // Show background loading message
   appendMessage('bot', '⏳ Loading AI model in background for joke generation... This may take a few minutes.');
-  
+
   loadWebLLMInBackground();
 });
 
