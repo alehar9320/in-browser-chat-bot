@@ -59,6 +59,8 @@
     "wink-nlp": "^2.4.0"
   },
   "devDependencies": {
+    "@eslint/config-array": "^0.21.0",
+    "@eslint/object-schema": "^2.1.6",
     "@testing-library/jest-dom": "^6.8.0",
     "@types/jest": "^29.5.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
@@ -66,14 +68,18 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jest": "^27.9.0",
+    "glob": "^11.0.3",
     "husky": "^9.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.0.5",
     "jsdoc": "^4.0.0",
     "lint-staged": "^15.2.0",
+    "lru-cache": "^11.1.0",
     "nodemon": "^3.0.0",
     "playwright": "^1.40.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "rimraf": "^6.0.1",
+    "nx": "21.4.1"
   },
   "lint-staged": {
     "*.{js,ts}": [
@@ -88,5 +94,6 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "nx": {}
 }
